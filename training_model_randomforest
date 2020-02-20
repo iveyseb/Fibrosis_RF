@@ -1,0 +1,452 @@
+try:
+    import numpy as np
+    
+    import glob
+    import os
+    #import mimics
+    from sklearn.feature_extraction import image
+    
+    import pandas as pd
+    from radiomics import featureextractor 
+    from sklearn.model_selection import train_test_split
+    from sklearn.ensemble import RandomForestClassifier
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    import importlib
+    import SimpleITK as sitk
+    from sklearn import metrics
+    from sklearn.metrics import roc_curve, auc
+    import pickle
+    import openpyxl
+    dfe1=pd.DataFrame({'NAME' : []})
+    dfe2=pd.DataFrame({'NAME' : []})
+    
+    dir_model= r'Z:\0313_TechOps_Research\patients\model'
+    filename =  'model.pkl'
+    
+    NPYFiles1 = glob.glob(r'C:\Users\student\Downloads\new\healthy\patches32_scans\*.npy')
+    NPYFiles2 = glob.glob(r'C:\Users\student\Downloads\v\fibrosis\patches32_scans\*.npy')
+    
+    li1=[]
+    li2=[]
+     
+    image_array1=[]
+    image_array2=[]
+    f1=[]
+    f2=[] 
+    srle=[]
+    glv=[]
+    llre=[]
+    lre=[]
+    srhle=[]
+    lrle=[]
+    hlre=[]
+    lrhle=[]
+        
+    srle1=[]
+    glv1=[]
+    llre1=[]
+    lre1=[]
+    srhle1=[]
+    lrle1=[]
+    hlre1=[]
+    lrhle1=[]
+            
+    cfv=[]
+    cofv=[]
+    sfv=[]
+    clfv=[]
+    bfv=[]
+    cfv1=[]
+    cofv1=[]
+    clfv1=[]
+    sfv1=[]
+    bfv1=[]
+    glnn=[]
+    glnn1=[]
+    rv=[]
+    rv1=[]
+    rln=[]
+    rln1=[]
+    sr=[]
+    sr1=[]
+    rp=[]
+    rp1=[]
+    re=[]
+    re1=[]
+    lila=[]
+    lila1=[]
+    hisa=[]
+    hisa1=[]
+    lisa=[]
+    lisa1=[]
+    zv=[]
+    zv1=[]
+    hie=[]
+    hie1=[]
+    zp=[]
+    zp1=[]
+    lie=[]
+    lie1=[]
+    szv=[]
+    szv1=[]
+    hila=[]
+    hila1=[]
+      
+    for NPYFile in NPYFiles1:
+        
+        
+        patient = NPYFile.split('patches32_scans')[-1].split('rot')[0]
+        li1.append(patient)
+     # Open Mimics File(healthy)
+        img_array1=np.load(NPYFile)
+        img_array1=img_array1.astype(np.uint32)
+        f1.append(0)
+    # Create empty dataframe 
+        dfe1=pd.DataFrame({'NAME' : []})
+        dfa1=pd.DataFrame({'SRLGLE' : []})
+        dfa2=pd.DataFrame({'GLV' : []})
+        dfa3=pd.DataFrame({'LGLRE' : []})
+        dfa4=pd.DataFrame({'LRE' : []})
+        dfa5=pd.DataFrame({'SRHGLE' : []})
+        dfa6=pd.DataFrame({'HGLRE' : []})
+        dfa7=pd.DataFrame({'LRHGLE' : []})
+        dfa8=pd.DataFrame({'LRLGLE' : []})
+        dfa9=pd.DataFrame({'GLN' : []})
+        dfa10=pd.DataFrame({'SAE': []})
+        dfa11=pd.DataFrame({'LAE': []})
+        dfa12=pd.DataFrame({'LAHGLE': []})
+        dfa13=pd.DataFrame({'LALGLE': []})
+        dfa14=pd.DataFrame({'GLNN': []})
+        dfa15=pd.DataFrame({'RV': []})
+        dfa16=pd.DataFrame({'RLN': []})
+        dfa17=pd.DataFrame({'SR': []})
+        dfa18=pd.DataFrame({'RP': []})
+        dfa19=pd.DataFrame({'RE': []})
+        dfa22=pd.DataFrame({'ZV': []})
+        dfa25=pd.DataFrame({'ZP': []})
+        dfa27=pd.DataFrame({'SZV': []})
+        y=pd.DataFrame({'Q' : []})
+        s=img_array1.shape
+    # Create mask of same shape 
+        mask_array=np.ones(s)
+           
+    # Instantiate the extractor    
+        extractor = featureextractor.RadiomicsFeatureExtractor()
+        extractor.disableAllFeatures()
+        extractor.enableFeatureClassByName('glrlm')
+        extractor.enableFeatureClassByName('glszm')
+        #print ("")
+        #print ("Enabled features:\n\t", extractor.enabledFeatures)
+        image = sitk.GetImageFromArray(img_array1)
+        mask = sitk.GetImageFromArray(mask_array)
+        result = extractor.execute(image,mask)
+        sre=list(result.values())
+        sle=list(result.keys())
+        #calculate features 
+        y1= sle.index('original_glrlm_ShortRunLowGrayLevelEmphasis')
+        s1=sre[y1]
+        srle.append(s1)
+        y2= sle.index('original_glrlm_GrayLevelVariance')
+        s2=sre[y2]
+        glv.append(s2)
+        y3= sle.index('original_glrlm_LowGrayLevelRunEmphasis')
+        s3=sre[y3]
+        llre.append(s3)
+        y4= sle.index('original_glrlm_LongRunEmphasis')
+        s4=sre[y4]
+        lre.append(s4)
+        y5=sle.index('original_glrlm_ShortRunHighGrayLevelEmphasis')
+        s5=sre[y5]
+        srhle.append(s5)
+        y6=sle.index('original_glrlm_HighGrayLevelRunEmphasis')
+        s6=sre[y6]
+        hlre.append(s6)
+        y7=sle.index('original_glrlm_LongRunHighGrayLevelEmphasis')
+        s7=sre[y7]
+        lrhle.append(s7)
+        y8=sle.index('original_glrlm_LongRunLowGrayLevelEmphasis')
+        s8=sre[y8]
+        lrle.append(s8)
+        y9=sle.index('original_glszm_GrayLevelNonUniformity')
+        s9=sre[y9]
+        cfv.append(s9)
+        y10=sle.index('original_glszm_SmallAreaEmphasis')
+        s10=sre[y10]
+        cofv.append(s10)
+        y11=sle.index('original_glszm_LargeAreaEmphasis')
+        s11=sre[y11]
+        bfv.append(s11)
+        y12=sle.index('original_glszm_LargeAreaHighGrayLevelEmphasis')
+        s12=sre[y12]
+        clfv.append(s12)
+        y13=sle.index('original_glszm_LargeAreaLowGrayLevelEmphasis')
+        s13=sre[y13]
+        sfv.append(s13)
+        y14=sle.index('original_glrlm_GrayLevelNonUniformityNormalized')
+        s14=sre[y14]
+        glnn.append(s14)
+        y15=sle.index('original_glrlm_RunVariance')
+        s15=sre[y15]
+        rv.append(s15)
+        y16=sle.index('original_glrlm_RunLengthNonUniformity')
+        s16=sre[y16]
+        rln.append(s16)
+        y17=sle.index('original_glrlm_ShortRunEmphasis')
+        s17=sre[y17]
+        sr.append(s17)
+        y18=sle.index('original_glrlm_RunPercentage')
+        s18=sre[y18]
+        rp.append(s18)
+        y19=sle.index('original_glrlm_RunEntropy')
+        s19=sre[y19]
+        re.append(s19)
+        y22=sle.index('original_glszm_ZoneVariance')
+        s22=sre[y22]
+        zv.append(s22)
+        y25=sle.index('original_glszm_ZonePercentage')
+        s25=sre[y25]
+        zp.append(s25)
+        y27=sle.index('original_glszm_SizeZoneNonUniformity')
+        s27=sre[y27]
+        szv.append(s27)
+            
+    dfa1['SRLGLE']=srle
+    dfa2['GLV']=glv
+    dfa3['LGLRE']=llre
+    dfa4['LRE']=lre
+    dfa5['SRHGLE']=srhle
+    dfa6['HGLRE']=hlre
+    dfa7['LRHGLE']=lrhle
+    dfa8['LRLGLE']=lrle
+    dfa9['GLN']=cfv
+    dfa10['SAE']=cofv
+    dfa11['LAE']=bfv
+    dfa12['LAHGLE']=clfv
+    dfa13['LALGLE']=sfv
+    dfa14['GLNN']=glnn
+    dfa15['RV']=rv
+    dfa16['RLN']=rln
+    dfa17['SR']=sr
+    dfa18['RP']=rp
+    dfa19['RE']=re
+    dfa22['ZV']=zv
+    dfa25['ZP']=zp
+    dfa27['SZV']=szv
+    dfe1['NAME']=li1
+    y['Q'] = pd.Series(f1)
+    frames= [dfa1,dfa2,dfa3,dfa4,dfa5,dfa6,dfa7,dfa8,dfa9,dfa10,dfa11,dfa12,dfa13,dfa14,dfa15,dfa16,dfa17,dfa18,dfa19,dfa22,dfa25,dfa27,dfe1,y]
+    dfa = pd.concat(frames, axis=1)
+    print(dfa)
+    
+# Open Mimics File(Fibrosis)  
+        
+    for NPYFile in NPYFiles2:
+        patient = NPYFile.split('patches32_scans')[-1].split('rot')[0]
+        li2.append(patient)
+        img_array2=np.load(NPYFile)
+        img_array2=img_array2.astype(np.uint32)
+        f2.append(1)
+        
+        # Create empty dataframe
+        dfe2=pd.DataFrame({'NAME' : []})    
+        dfb1=pd.DataFrame({'SRLGLE' : []})
+        dfb2=pd.DataFrame({'GLV' : []})
+        dfb3=pd.DataFrame({'LGLRE' : []})
+        dfb4=pd.DataFrame({'LRE' : []})
+        dfb5=pd.DataFrame({'SRHGLE' : []})
+        dfb6=pd.DataFrame({'HGLRE' : []})
+        dfb7=pd.DataFrame({'LRHGLE' : []})
+        dfb8=pd.DataFrame({'LRLGLE' : []})
+        dfb9=pd.DataFrame({'GLN' : []})
+        dfb10=pd.DataFrame({'SAE': []})
+        dfb11=pd.DataFrame({'LAE': []})
+        dfb12=pd.DataFrame({'LAHGLE': []})
+        dfb13=pd.DataFrame({'LALGLE': []})
+        dfb14=pd.DataFrame({'GLNN': []})
+        dfb15=pd.DataFrame({'RV': []})
+        dfb16=pd.DataFrame({'RLN': []})
+        dfb17=pd.DataFrame({'SR': []})
+        dfb18=pd.DataFrame({'RP': []})
+        dfb19=pd.DataFrame({'RE': []})
+        dfb22=pd.DataFrame({'ZV': []})
+        dfb24=pd.DataFrame({'HIE': []})
+        dfb25=pd.DataFrame({'ZP': []})
+        dfb26=pd.DataFrame({'LIE': []})
+        dfb27=pd.DataFrame({'SZV': []})
+        y=pd.DataFrame({'Q' : []})
+        s=img_array2.shape
+        # Create Mask of same shape
+        mask_array=np.ones(s)
+        
+        # Instantiate the extractor
+        extractor = featureextractor.RadiomicsFeatureExtractor()
+        
+        
+        extractor.disableAllFeatures()
+       
+        extractor.enableFeatureClassByName('glrlm')
+        extractor.enableFeatureClassByName('glszm')
+​
+        image2 = sitk.GetImageFromArray(img_array2)
+        mask2 = sitk.GetImageFromArray(mask_array)
+        result2 = extractor.execute(image2,mask2)
+        sre1=list(result2.values())
+        sle1=list(result2.keys())
+        # Calculate Features
+        y11= sle1.index('original_glrlm_ShortRunLowGrayLevelEmphasis')
+       
+        s11=sre1[y11]
+        srle1.append(s11)
+        y21= sle1.index('original_glrlm_GrayLevelVariance')
+        s21=sre1[y21]
+        glv1.append(s21)
+        y31= sle1.index('original_glrlm_LowGrayLevelRunEmphasis')
+        s31=sre1[y31]
+        llre1.append(s31)
+        y41= sle1.index('original_glrlm_LongRunEmphasis')
+        s41=sre1[y41]
+        lre1.append(s41)
+        y51=sle1.index('original_glrlm_ShortRunHighGrayLevelEmphasis')
+        s51=sre1[y51]
+        srhle1.append(s51)
+        y61=sle1.index('original_glrlm_HighGrayLevelRunEmphasis')
+        s61=sre1[y61]
+        hlre1.append(s61)
+        y71=sle1.index('original_glrlm_LongRunHighGrayLevelEmphasis')
+        s71=sre1[y71]
+        lrhle1.append(s71)
+        y81=sle1.index('original_glrlm_LongRunLowGrayLevelEmphasis')
+        s81=sre1[y81]
+        lrle1.append(s81)
+        y91=sle1.index('original_glszm_GrayLevelNonUniformity')
+        s91=sre1[y91]
+        cfv1.append(s91)
+        y101=sle1.index('original_glszm_SmallAreaEmphasis')
+        s101=sre1[y101]
+        cofv1.append(s101)
+        y111=sle1.index('original_glszm_LargeAreaEmphasis')
+        s111=sre1[y111]
+        bfv1.append(s111)
+        y121=sle1.index('original_glszm_LargeAreaHighGrayLevelEmphasis')
+        s121=sre1[y121]
+        clfv1.append(s121)
+        y131=sle1.index('original_glszm_LargeAreaLowGrayLevelEmphasis')
+        s131=sre1[y131]
+        sfv1.append(s131)
+        y141=sle1.index('original_glrlm_GrayLevelNonUniformityNormalized')
+        s141=sre1[y141]
+        glnn1.append(s141)
+        y151=sle1.index('original_glrlm_RunVariance')
+        s151=sre1[y151]
+        rv1.append(s151)
+        y161=sle1.index('original_glrlm_RunLengthNonUniformity')
+        s161=sre1[y161]
+        rln1.append(s161)
+        y171=sle1.index('original_glrlm_ShortRunEmphasis')
+        s171=sre1[y171]
+        sr1.append(s171)
+        y181=sle1.index('original_glrlm_RunPercentage')
+        s181=sre1[y181]
+        rp1.append(s181)
+        y191=sle1.index('original_glrlm_RunEntropy')
+        s191=sre1[y191]
+        re1.append(s191)
+        y221=sle1.index('original_glszm_ZoneVariance')
+        s221=sre1[y221]
+        zv1.append(s221)
+        y251=sle1.index('original_glszm_ZonePercentage')
+        s251=sre1[y251]
+        zp1.append(s251)
+        y271=sle1.index('original_glszm_SizeZoneNonUniformity')
+        s271=sre1[y271]
+        szv1.append(s271)
+            
+    # Storing the feature values as a single dataframe
+    dfb1['SRLGLE']=srle1
+    dfb2['GLV']=glv1
+    dfb3['LGLRE']=llre1
+    dfb4['LRE']=lre1
+    dfb5['SRHGLE']=srhle1
+    dfb6['HGLRE']=hlre1
+    dfb7['LRHGLE']=lrhle1
+    dfb8['LRLGLE']=lrle1
+    dfb9['GLN']=cfv1
+    dfb10['SAE']=cofv1
+    dfb11['LAE']=bfv1
+    dfb12['LAHGLE']=clfv1
+    dfb13['LALGLE']=sfv1
+    dfb14['GLNN']=glnn1
+    dfb15['RV']=rv1
+    dfb16['RLN']=rln1
+    dfb17['SR']=sr1
+    dfb18['RP']=rp1
+    dfb19['RE']=re1
+    dfb22['ZV']=zv1
+    dfb25['ZP']=zp1
+    dfb27['SZV']=szv1
+    dfe2['NAME']=li2
+    y['Q'] = pd.Series(f2)
+    frames= [dfb1,dfb2,dfb3,dfb4,dfb5,dfb6,dfb7,dfb8,dfb9,dfb10,dfb11,dfb12,dfb13,dfb14,dfb15,dfb16,dfb17,dfb18,dfb19,dfb22,dfb25,dfb27,dfe2,y]
+    dfb = pd.concat(frames, axis=1)
+    print(dfb)
+    pat=[dfa,dfb]
+    df=pd.concat(pat,axis=0,ignore_index=True,sort=True)
+    pd.set_option('display.max_columns',50)
+    print(df)
+    feat =df[['SRLGLE','GLV','LGLRE','LRE','SRHGLE','HGLRE','LRHGLE','LRLGLE','GLN','SAE','LAE','LAHGLE','LALGLE','GLNN','RV','RLN','SR','RP','RE','ZV','ZP','SZV','NAME']]
+    y=df['Q']
+    # Splitting the dataframe to test and training set
+    X_train, X_test, y_train, y_test = train_test_split(feat, y, test_size=0.3)
+    pd.set_option('display.max_rows', X_train.shape[0]+1)
+    
+    x_used=X_train['NAME']
+    print(x_used)
+    path_to_file = r'Z:\0313_TechOps_Research\patients\name.csv'
+    x_used.to_csv(path_to_file, index='False')
+    
+    X_train=X_train.drop(columns=['NAME'])
+    X_test=X_test.drop(columns=['NAME'])
+    pd.set_option('display.max_rows', X_train.shape[0]+1)
+    # Instantiate model with 100 trees
+    clf=RandomForestClassifier(n_estimators=100,warm_start=True)
+    # Train the model using the training sets
+    clf.fit(X_train,y_train)
+    y_pred=clf.predict(X_train)
+    # Calculate accuracy of the trained model
+    from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
+    score = metrics.accuracy_score(y_train,y_pred)
+    # Saving the model
+    pickle.dump(clf,open(filename,'wb'))
+   
+    y_pred_pro=clf.predict_proba(X_train)[:,1]
+    fig1=plt.figure(figsize=(10,4) ) 
+    plt.subplot(1,5,1)
+​
+    # ROC curvey_train
+    from sklearn.metrics import roc_auc_score
+    roc_value=roc_auc_score(y_train,y_pred_pro) # calculating AUC
+    
+    fpr = dict()
+    tpr = dict()
+    roc_auc = dict()
+    for i in range (2):
+        fpr[i], tpr[i],_ = roc_curve(y_train,y_pred_pro)
+    
+        
+    plt.plot(fpr[1],tpr[1])
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.title('Receiver operating characteristic')
+    plt.show()
+    features =df[['SRLGLE','GLV','LGLRE','LRE','SRHGLE','HGLRE','LRHGLE','LRLGLE','GLN','SAE','LAE','LAHGLE','LALGLE','GLNN','RV','RLN','SR','RP','RE','ZV','ZP','SZV']]
+    index=features.columns
+    print(roc_value)
+    
+    
+    print('good job!')
+    
+    
+    
+except Exception as e:
+    print(e)
