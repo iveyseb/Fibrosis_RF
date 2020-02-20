@@ -1,0 +1,326 @@
+import numpy as np
+import os
+import importlib
+import glob
+from sklearn.feature_extraction import image
+import pandas as pd
+from radiomics import featureextractor 
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+import matplotlib.pyplot as plt
+from numpy.random import beta
+import os, random
+import SimpleITK as sitk
+from sklearn import metrics
+from sklearn.metrics import roc_curve, auc
+import training_model_randomforest
+​
+​
+NPYFiles1 = glob.glob(r'C:\Users\student\Downloads\new\healthy\patches32_scans\*.npy')
+NPYFiles2 = glob.glob(r'C:\Users\student\Downloads\v\fibrosis\patches32_scans\*.npy')
+#model= training_model_svm.create_a_model(NPYFiles1,NPYFiles2)
+​
+def predict_labels_overlapping_patches( model,dir_scan,patient, dir_save1,dir_save2,
+                                       batch_size=32, target_size=(32,32,32),
+                                       overlapfactor=1.5):
+    """
+    A function which returns the predictions by the model on different scans.
+    The function extracts overlappng patches fom the scan
+    It determines the values of features from the patches
+    : param dir_scan : directory in wich scans are stored as NumPy arrays
+    : param dir_save1 :diretory in which predictions of probabilities are stored as NumPy arrays
+    : param dir_save2: directory in which the class predictions are stored
+    : return : probabilty predictions, class predictions and the score(measure of the extent of fibrosis)
+    """
+    predicti=[]
+    prob1=[]
+    prob2=[]
+    scan = np.load('{}\\{}'.format(dir_scan, patient))
+    #mask = np.load('{}\\{}'.format(dir_mask, patient))
+    X, Y, Z = np.shape(scan)
+    
+   
+    numX = int(np.ceil(overlapfactor*(X / target_size[0])))
+    numY = int(np.ceil(overlapfactor*(Y / target_size[1])))
+    numZ = int(np.ceil(overlapfactor*(Z / target_size[2])))
+    Xs = np.uint16(np.linspace(0, X - target_size[0], num=numX))
+    Ys = np.uint16(np.linspace(0, Y - target_size[1], num=numY))
+    Zs = np.uint16(np.linspace(0, Z - target_size[2], num=numZ))
+    
+    predictions = np.zeros((X,Y,Z), dtype=np.float16)
+    amount = np.zeros_like(scan, dtype=np.float16)
+    startpoints = [(x,y,z) for x in Xs for y in Ys for z in Zs]
+    num_batches = int(np.ceil(numX*numY*numZ/batch_size))
+    pre=[]
+    t=[]
+    for batch_i in range(num_batches):
+        srle3=[]
+        glv3=[]
+        llre3=[]
+        lre3=[]
+        srhle3=[]
+        lrle3=[]
+        hlre3=[]
+        lrhle3=[]
+   
+        cfv3=[]
+        cofv3=[]
+        sfv3=[]
+        clfv3=[]
+        bfv3=[]
+        glnn3=[]
+        rv3=[]
+        rln3=[]
+        sr3=[]
+        rp3=[]
+        re3=[]
+        lila3=[]
+        hisa3=[]
+        lisa3=[]
+        zv3=[]
+        hie3=[]
+        zp3=[]
+        lie3=[]
+        szv3=[]
+        hila3=[]
+        #Create empty dataframe
+        dfi1=pd.DataFrame({'SRLGLE' : []})
+        dfi2=pd.DataFrame({'GLV' : []})
+        dfi3=pd.DataFrame({'LGLRE' : []})
+        dfi4=pd.DataFrame({'LRE' : []})
+        dfi5=pd.DataFrame({'SRHGLE' : []})
+        dfi6=pd.DataFrame({'HGLRE' : []})
+        dfi7=pd.DataFrame({'LRHGLE' : []})
+        dfi8=pd.DataFrame({'LRLGLE' : []})
+        dfi9=pd.DataFrame({'GLN' : []})
+        dfi10=pd.DataFrame({'SAE': []})
+        dfi11=pd.DataFrame({'LAE': []})
+        dfi12=pd.DataFrame({'LAHGLE': []})
+        dfi13=pd.DataFrame({'LALGLE': []})
+        dfi14=pd.DataFrame({'GLNN': []})
+        dfi15=pd.DataFrame({'RV': []})
+        dfi16=pd.DataFrame({'RLN': []})
+        dfi17=pd.DataFrame({'SR': []})
+        dfi18=pd.DataFrame({'RP': []})
+        dfi19=pd.DataFrame({'RE': []})
+        
+        dfi22=pd.DataFrame({'ZV': []})
+        
+        dfi25=pd.DataFrame({'ZP': []})
+        
+        dfi27=pd.DataFrame({'SZV': []})
+        
+        start_min = batch_i*batch_size
+        
+        start_max = np.min([(batch_i+1)*batch_size, numX*numY*numZ])
+        
+        if (start_max - start_min) % 2 == 1:
+            start_min -= 1
+        batch = np.zeros((start_max - start_min, 1, target_size[0], target_size[1], target_size[2]))      
+        
+        for i, startpoint in enumerate(range(start_min, start_max)):
+            patch = scan[startpoints[startpoint][0]:startpoints[startpoint][0]+target_size[0],
+                            startpoints[startpoint][1]:startpoints[startpoint][1]+target_size[1],
+                            startpoints[startpoint][2]:startpoints[startpoint][2]+target_size[2]]
+            
+            
+            patch=patch.astype(np.uint32)
+            
+            s3=patch.shape
+            
+            mask_array3=np.ones(s3)
+            #Instantiate the extractor
+            extractor = featureextractor.RadiomicsFeatureExtractor()
+            
+        
+            extractor.disableAllFeatures()
+            extractor.enableFeatureClassByName('glrlm')
+            extractor.enableFeatureClassByName('glszm')
+            
+            image3 = sitk.GetImageFromArray(patch)
+            mask3 = sitk.GetImageFromArray(mask_array3)
+            result3 = extractor.execute(image3,mask3)
+            
+            
+            
+            sre3=list(result3.values())
+            sle3=list(result3.keys())
+            # Calculate the value of features
+            ya1= sle3.index('original_glrlm_ShortRunLowGrayLevelEmphasis')
+           
+            sa1=sre3[ya1]
+            srle3.append(sa1)
+            ya2= sle3.index('original_glrlm_GrayLevelVariance')
+            sa2=sre3[ya2]
+            glv3.append(sa2)
+            ya3= sle3.index('original_glrlm_LowGrayLevelRunEmphasis')
+            sa3=sre3[ya3]
+            llre3.append(sa3)
+            ya4= sle3.index('original_glrlm_LongRunEmphasis')
+            sa4=sre3[ya4]
+            lre3.append(sa4)
+            ya5=sle3.index('original_glrlm_ShortRunHighGrayLevelEmphasis')
+            sa5=sre3[ya5]
+            srhle3.append(sa5)
+            ya6=sle3.index('original_glrlm_HighGrayLevelRunEmphasis')
+            sa6=sre3[ya6]
+            hlre3.append(sa6)
+            ya7=sle3.index('original_glrlm_LongRunHighGrayLevelEmphasis')
+            sa7=sre3[ya7]
+            lrhle3.append(sa7)
+            ya8=sle3.index('original_glrlm_LongRunLowGrayLevelEmphasis')
+            sa8=sre3[ya8]
+            lrle3.append(sa8)
+            ya9=sle3.index('original_glszm_GrayLevelNonUniformity')
+            sa9=sre3[ya9]
+            cfv3.append(sa9)
+            ya10=sle3.index('original_glszm_SmallAreaEmphasis')
+            sa10=sre3[ya10]
+            cofv3.append(sa10)
+            ya11=sle3.index('original_glszm_LargeAreaEmphasis')
+            sa11=sre3[ya11]
+            bfv3.append(sa11)
+            ya12=sle3.index('original_glszm_LargeAreaHighGrayLevelEmphasis')
+            sa12=sre3[ya12]
+            clfv3.append(sa12)
+            ya13=sle3.index('original_glszm_LargeAreaLowGrayLevelEmphasis')
+            sa13=sre3[ya13]
+            sfv3.append(sa13)
+            ya14=sle3.index('original_glrlm_GrayLevelNonUniformityNormalized')
+            sa14=sre3[ya14]
+            glnn3.append(sa14)
+            ya15=sle3.index('original_glrlm_RunVariance')
+            sa15=sre3[ya15]
+            rv3.append(sa15)
+            ya16=sle3.index('original_glrlm_RunLengthNonUniformity')
+            sa16=sre3[ya16]
+            rln3.append(sa16)
+            ya17=sle3.index('original_glrlm_ShortRunEmphasis')
+            sa17=sre3[ya17]
+            sr3.append(sa17)
+            ya18=sle3.index('original_glrlm_RunPercentage')
+            sa18=sre3[ya18]
+            rp3.append(sa18)
+            ya19=sle3.index('original_glrlm_RunEntropy')
+            sa19=sre3[ya19]
+            re3.append(sa19)
+            
+            ya22=sle3.index('original_glszm_ZoneVariance')
+            sa22=sre3[ya22]
+            zv3.append(sa22)
+            
+            ya25=sle3.index('original_glszm_ZonePercentage')
+            sa25=sre3[ya25]
+            zp3.append(sa25)
+            
+            ya27=sle3.index('original_glszm_SizeZoneNonUniformity')
+            sa27=sre3[ya27]
+            szv3.append(sa27)
+            
+        # Adding the feature values to the dataframe
+        dfi1['SRLGLE']=srle3
+            
+            
+        dfi2['GLV']=glv3
+​
+​
+            
+        dfi3['LGLRE']=llre3
+            
+        
+        dfi4['LRE']=lre3
+            
+        dfi5['SRHGLE']=srhle3
+        dfi6['HGLRE']=hlre3
+        dfi7['LRHGLE']=lrhle3
+        dfi8['LRLGLE']=lrle3
+        dfi9['GLN']=cfv3
+        dfi10['SAE']=cofv3
+        dfi11['LAE']=bfv3
+        dfi12['LAHGLE']=clfv3
+        dfi13['LALGLE']=sfv3
+        dfi14['GLNN']=glnn3
+        dfi15['RV']=rv3
+        dfi16['RLN']=rln3
+        dfi17['SR']=sr3
+        dfi18['RP']=rp3
+        dfi19['RE']=re3
+        
+        dfi22['ZV']=zv3
+        
+        dfi25['ZP']=zp3
+        
+        dfi27['SZV']=szv3
+        
+        
+        frames1= [dfi1,dfi2,dfi3,dfi4,dfi5,dfi6,dfi7,dfi8,dfi9,dfi10,dfi11,dfi12,dfi13,dfi14,dfi15,dfi16,dfi17,dfi18,dfi19,dfi22,dfi25,dfi27]
+        dfx = pd.concat(frames1, axis=1)
+       
+        features_x =dfx[['SRLGLE','GLV','LGLRE','LRE','SRHGLE','HGLRE','LRHGLE','LRLGLE','GLN','SAE','LAE','LAHGLE','LALGLE','GLNN','RV','RLN','SR','RP','RE','ZV','ZP','SZV']]
+        
+        pred_batch = model.predict_proba(features_x)
+        # Predicting the class
+        pre1=model.predict(features_x)
+        l1=len(pre1)
+        pre.append(pre1)
+        for i, startpoint in enumerate(range(start_min, start_max)):
+            pred=pred_batch[i]
+            
+            predictions[startpoints[startpoint][0]:startpoints[startpoint][0]+target_size[0],
+                            startpoints[startpoint][1]:startpoints[startpoint][1]+target_size[1],
+                            startpoints[startpoint][2]:startpoints[startpoint][2]+target_size[2]] += pred[1]
+            
+                      
+            amount[startpoints[startpoint][0]:startpoints[startpoint][0]+target_size[0],
+                           startpoints[startpoint][1]:startpoints[startpoint][1]+target_size[1],
+                            startpoints[startpoint][2]:startpoints[startpoint][2]+target_size[2]] += np.ones(target_size)
+​
+           
+        dfx=dfx.drop(columns=['SRLGLE','GLV','LGLRE','LRE','SRHGLE','HGLRE','LRHGLE','LRLGLE','GLN','SAE','LAE','LAHGLE','LALGLE','GLNN','RV','RLN','SR','RP','RE','ZV','ZP','SZV',],axis=1)
+        dfi1=dfi1.drop(columns=['SRLGLE'])
+        dfi2=dfi2.drop(columns=['GLV'])
+        dfi3=dfi3.drop(columns=['LGLRE'])
+        dfi4=dfi4.drop(columns=['LRE'])
+        dfi5=dfi5.drop(columns=['SRHGLE'])
+        dfi6=dfi6.drop(columns=['HGLRE'])
+        dfi7=dfi7.drop(columns=['LRHGLE'])
+​
+        dfi8=dfi8.drop(columns=['LRLGLE'])
+        dfi9=dfi9.drop(columns=['GLN'])
+        dfi10=dfi10.drop(columns=['SAE'])
+        dfi11=dfi11.drop(columns=['LAE'])
+        dfi12=dfi12.drop(columns=['LAHGLE'])
+        dfi13=dfi13.drop(columns=['LALGLE'])
+        dfi14=dfi14.drop(columns=['GLNN'])
+        dfi15=dfi15.drop(columns=['RV'])
+        dfi16=dfi16.drop(columns=['RLN'])
+        dfi17=dfi17.drop(columns=['SR'])
+​
+        dfi18=dfi18.drop(columns=['RP'])
+        dfi18=dfi19.drop(columns=['RE'])
+        
+        dfi22=dfi22.drop(columns=['ZV'])
+​
+        
+        dfi25=dfi25.drop(columns=['ZP'])
+        
+        dfi27=dfi27.drop(columns=['SZV'])
+       
+        
+        
+    predictions = np.divide(predictions, amount)       
+    
+    
+    # Calculate the score( Extent of fibrosis)
+    l=(len(pre)*l1)
+    print(l)
+    for i in range(len(pre)):
+        a=list(pre[i])
+        t.append(a.count(1))
+        
+    
+    s=sum(t)
+    score=np.divide(s,l)
+    
+    
+    return predictions,score,pre
