@@ -1,0 +1,56 @@
+import numpy as np
+import importlib
+import os
+​
+import time
+import glob
+​
+import training_model_randomforest
+import pickle
+import model_predictions
+​
+dir_scan = r'Z:\0313_TechOps_Research\patients\scans\scans'
+dir_save1 =  r'Z:\0313_TechOps_Research\patients\predictions'
+dir_save2 =  r'Z:\0313_TechOps_Research\patients\class_predictions'
+dir_model= r'Z:\0313_TechOps_Research\patients\model'
+​
+scores=[]
+class_predictions=[]
+​
+NPYFiles1 = glob.glob(r'C:\Users\student\Downloads\new\healthy\patches32_scans\*.npy')
+NPYFiles2 = glob.glob(r'C:\Users\student\Downloads\v\fibrosis\patches32_scans\*.npy')
+# loading the trained model
+model= pickle.load(open(filename,'rb'))
+​
+# applying the function on each scan in the directory
+for patient in os.listdir(dir_scan)[0:]:
+    print(patient)   
+    t1 = time.time()
+    # Calling the funtion
+    predictions,score,pre=model_predictions.predict_labels_overlapping_patches(model,
+                                       dir_scan, patient, dir_save1,dir_save2, 
+                                        batch_size=32, target_size=(32,32,32),
+                                        overlapfactor=1.5)
+    """
+    A function which returns the predictions by the trained model on different scans.
+    The function extracts overlappng patches fom the scan
+    It determines the values of features from the patches and predict probabilities on them
+​
+    : param dir_scan : directory in wich scans are stored as NumPy arrays
+    : param dir_save1 :diretory in which predictions of probabilities are stored as NumPy arrays
+    : param dir_save2: directory in which the class predictions are stored
+    : return : probabilty predictions, class predictions and the score(measure of the extent of fibrosis)
+    """
+    
+    t2 = time.time()
+    print("Elapsed time: " + str(t2-t1))
+   
+    # Storing the returned value from the function in different directories
+    np.save('{}\\{}'.format(dir_save1, patient), predictions)
+    scores.append(score)
+    class_predictions.append(pre)
+    np.save('{}\\{}'.format(dir_save2, patient), pre)
+    
+print(scores)
+print(class_predictions)
+print('done')
