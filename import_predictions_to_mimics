@@ -1,0 +1,71 @@
+import numpy as np 
+import matplotlib.cm
+​
+import glob
+​
+projectInfo = mimics.file.get_project_information()
+project_path = projectInfo.project_path
+​
+print(project_path)
+splitted = project_path.split("\\")
+name = splitted[-1].split(".")[0]
+print(name)
+​
+dir_pred = r'C:\Users\student\Downloads\new\output
+​
+name = '112_003_11688X_TLC'
+intervals=15
+print('Loading  output... ')
+# Loading the predictions
+predictions = np.load('{}\\{}.npy'.format(dir_pred,patient))
+print(predictions)
+print(predictions.shape)
+cmap = matplotlib.cm.get_cmap('jet')
+# Creating masks out of 3D lungs
+X=mimics.data.parts.find('RL ')
+Y=mimics.data.parts.find('LL ')
+b=mimics.segment.calculate_mask_from_part(X)
+c=mimics.segment.calculate_mask_from_part(Y)
+#b=mimics.data.masks[13]
+#c=mimics.data.masks[14]
+# Loop for creating masks at various threshold intervals
+for i in range(intervals):
+    min_threshold = i/intervals
+    max_threshold = (i+1)/intervals
+​
+    mask_min = np.zeros(predictions.shape)
+    mask_min[np.where(predictions>min_threshold)] = 1
+    
+    print(mask_min)
+    mask_max = np.zeros(predictions.shape)
+    mask_max[np.where(predictions<=max_threshold)] = 1
+    print(mask_max)
+    mask = np.zeros(predictions.shape,dtype=bool)
+    
+    
+    
+    mask[np.where(mask_max*mask_min>0) ] = True
+    
+    print(mask)
+    a= mimics.segment.create_mask(np.array(mask,dtype=bool))
+    #b=mimics.data.masks[3]
+    #c=mimics.data.masks[4]
+    
+​
+    e=mimics.segment.boolean_operations(a,b,operation='Intersect')
+​
+    e.name="fib_right"
+    f=mimics.segment.boolean_operations(a,c,operation='Intersect')
+    
+    f.name="fib_left"
+    mimics.data.masks.delete(a)
+    
+    #pred.name = 'Fibrosis_max_prob={}'.format(threshold_max)
+    # Setting up the colormap 
+    color = cmap(max_threshold)
+    
+    e.color = (color[0], color[1], color[2])
+    f.color = (color[0], color[1], color[2])
+​
+​
+print('done')
