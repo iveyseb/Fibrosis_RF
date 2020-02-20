@@ -1,0 +1,90 @@
+import numpy as np
+import os, random
+import matplotlib.pyplot as plt
+import time
+import glob
+mimicsfiles = glob.glob(r'Z:\0313_TechOps_Research\patients\img_arrays\*.mcs')
+dir_main = r'Z:\0313_TechOps_Research\patients\scans'
+mimics.dialogs.set_predefined_answer("ProjectHasNotValidCS", 'Yes')
+mimics.dialogs.set_predefined_answer("CannotConvertProject", 'Yes')
+mimics.dialogs.set_predefined_answer('FixImagesPositioning', 'Yes')
+mimics.dialogs.set_predefined_answer("RendererSwitchWarning", 'Ok')
+mimics.dialogs.set_predefined_answer("ChangeOrientation", 'default')
+mimics.dialogs.set_predefined_answer("ExcludedImagesWarning", 'Ok')
+mimics.dialogs.set_predefined_answer("SelectPixelSize", 'X')
+mimics.dialogs.set_predefined_answer("EditionCompatibiltyMedicalDialog", 'Ok')
+mimics.dialogs.set_predefined_answer("EditionCompatibiltyResearchDialog", 'Ok')
+mimics.dialogs.set_predefined_answer("ContinueWithOutdatedDataModel", 'Yes')
+mimics.dialogs.set_predefined_answer("SaveChangedProject", 'No')
+mimics.dialogs.set_predefined_answer("TryRecoverBaseLicenseWhenLost", 'Yes')
+# Import mimics files
+for filename in mimicsfiles:
+    patient = filename.split('\\')[-1].split('.')[0]    
+    print(patient)
+​
+    if not os.path.isfile('{}\\masks\\{}.npy'.format(dir_main,patient)):
+        mimics.file.open_project(filename=filename)
+        project = mimics.file.ProjectInformation()
+        voxel_size = (project.pixel_size, project.pixel_size, project.slice_increment)
+        project_path = project.project_path
+​
+        # save scan in numpy format 
+        img = np.array(mimics.data.images[0].get_voxel_buffer(),dtype=np.float16)
+        
+        np.save('{}\\scans\\{}.npy'.format(dir_main,patient), img)
+        mask = np.zeros_like(img, dtype=np.uint8)
+        masks_to_delete = []
+​
+        saving = True
+​
+        # lung
+        if mimics.data.parts.find('RL'):
+            RLpart = mimics.data.parts.find('RL')
+            RL = mimics.segment.calculate_mask_from_part(part=RLpart)
+            RL.name = 'RL'
+            masks_to_delete.append(RL)
+        elif mimics.data.masks.find('RL_closed'):
+            RL = mimics.data.masks.find('RL_closed')
+        elif mimics.data.masks.find('RL'):
+            RL = mimics.data.masks.find('RL')
+            RL2 = mimics.segment.morphology_operations(RL, operation='Close', number_of_pixels=2, connectivity=26)
+            RL2.name = 'RL_closed'
+            RL = mimics.data.masks.find('RL_closed')
+            masks_to_delete.append(RL)
+        else:
+            saving = False
+        # save scan in numpy format 
+        if saving:
+            mask[np.where(np.array(RL.get_voxel_buffer(), dtype=np.float32)>0)] = 1
+​
+        if mimics.data.parts.find('LL'):
+            LLpart = mimics.data.parts.find('LL')
+            LL = mimics.segment.calculate_mask_from_part(part=LLpart)
+            LL.name = 'LL'
+        elif mimics.data.masks.find('LL_closed'):
+            LL = mimics.data.masks.find('LL_closed')
+        elif mimics.data.masks.find('LL'):
+            LL = mimics.data.masks.find('LL')
+            LL2 = mimics.segment.morphology_operations(LL, operation='Close', number_of_pixels=2, connectivity=26)
+            LL2.name = 'LL_closed'
+            LL = mimics.data.masks.find('LL_closed')
+            masks_to_delete.append(LL)
+        else:
+            saving = False
+        # save scan in numpy format 
+        if saving:
+            mask[np.where(np.array(LL.get_voxel_buffer(), dtype=np.float32)>0)] = 1
+            masks_to_delete.append(LL)
+        
+        # mimics.data.objects.delete(masks_to_delete)
+​
+        # fibrosis
+        fibrosis_list = mimics.data.masks.filter(expression='fibrosis*', regex=True)
+        for fibrosis in fibrosis_list:
+            mask[np.where(np.array(fibrosis.get_voxel_buffer(), dtype=np.float32)>0)] = 2
+        # save scan in numpy format 
+        if saving:
+            np.save('{}\\masks\\{}.npy'.format(dir_main,patient), mask)
+        
+        saving = True
+    print('done')
