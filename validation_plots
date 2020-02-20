@@ -1,0 +1,76 @@
+import numpy as np
+import glob
+import matplotlib.pyplot as plt
+from scipy import stats
+import sklearn.metrics as metrics
+from sklearn.metrics import roc_curve, auc
+# Loading the probability and class predictions stored
+npyfiles1=glob.glob(r'Z:\0313_TechOps_Research\patients\predictions_val\*.npy')
+npyfiles2=glob.glob(r'Z:\0313_TechOps_Research\patients\class_predictions_val\*.npy')
+A=[]
+B=[]
+prob1=[]
+prob2=[]
+healthy_avg=[]
+fibrosis_avg=[]
+# Probabilty prediction
+for npyfile in npyfiles1:
+    a=np.load(npyfile)
+    
+    A.append(a)
+    # Class prediction
+for npyfile in npyfiles2:
+    b=np.load(npyfile)
+    #print(b)
+    B.append(b)
+print(len(A))
+print(len(B))
+print(A)
+print(B)
+from statistics import mean
+​
+for i in range(len(A)):
+    # Calculate average of healthy and fibrosis subjects' probabilities
+    if i<10:
+        
+        healthy_avg.append(np.mean(A[i]))
+    else:
+        fibrosis_avg.append(np.mean(A[i]))
+print('healthy_avg_prob:')
+print(np.mean(healthy_avg))
+​
+print(np.mean(fibrosis_avg))
+prob1=np.array(healthy_avg)
+print(prob1)
+print('fibrosis_avg_prob:')
+prob2=np.array(fibrosis_avg)
+print(prob2)
+# An independent 2 tailed t test
+t,p=stats.ttest_ind(prob1,prob2)
+print('p value:')
+print(p)
+# Plots
+fig1 = plt.figure(figsize=(5,5))
+ax1= fig1.add_subplot(211)
+# Boxplot
+ax1.boxplot([prob2,prob1], labels=['fibrosis','healthy'] ,showmeans='True',showfliers='False',showbox= True)
+ax1.set_ylabel('probabilities')
+ax2=fig1.add_subplot(212)
+# Scatter plot
+x=list(range(10))
+ax2.scatter(x,prob1,c='blue',label='healthy subjects')
+ax2.scatter(x,prob2, c='red',label='IPF patients')
+​
+leg=plt.legend(loc='right')
+​
+fi_test=np.ones(prob2.shape)
+fi_test=fi_test.astype(np.uint32)
+fi_test1=list(fi_test)
+print(fi_test)
+print(healthy_avg)
+print(fibrosis_avg)
+print(prob1.dtype)
+​
+​
+​
+plt.show()
